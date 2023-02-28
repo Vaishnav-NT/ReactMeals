@@ -1,35 +1,14 @@
+import { useEffect, useState } from "react";
 import classes from "./AvailableMeals.module.css";
 import MealItem from "./MealItem";
+import Card from "../UI/Card";
 
 const AvailableMeals = () => {
-    const DUMMY_MEALS = [
-        {
-            id: "m1",
-            name: "Sushi",
-            description: "Finest fish and veggies",
-            price: 22.99,
-        },
-        {
-            id: "m2",
-            name: "Schnitzel",
-            description: "A german specialty!",
-            price: 16.5,
-        },
-        {
-            id: "m3",
-            name: "Barbecue Burger",
-            description: "American, raw, meaty",
-            price: 12.99,
-        },
-        {
-            id: "m4",
-            name: "Green Bowl",
-            description: "Healthy...and green...",
-            price: 18.99,
-        },
-    ];
+    const [meals, setMeals] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [hasError, setHasError] = useState();
 
-    const mealsList = DUMMY_MEALS.map((meal) => {
+    const mealsList = meals.map((meal) => {
         return (
             <MealItem
                 key={meal.id}
@@ -41,9 +20,55 @@ const AvailableMeals = () => {
         );
     });
 
+    useEffect(() => {
+        const getRespone = async () => {
+            setIsLoading(true);
+
+            const response = await fetch(
+                "https://reactmeals-8ef1f-default-rtdb.firebaseio.com/meals.json"
+            );
+
+            if (!response.ok) {
+                throw new Error("Something went wrong");
+            }
+
+            const data = await response.json();
+
+            const mealsData = [];
+            for (const meal in data) {
+                mealsData.push({
+                    key: data[meal].id,
+                    id: data[meal].id,
+                    name: data[meal].name,
+                    desc: data[meal].description,
+                    price: data[meal].price,
+                });
+            }
+
+            setMeals(mealsData);
+            setIsLoading(false);
+        };
+
+        getRespone().catch(() => {
+            console.log("jere");
+            setIsLoading(false);
+            setHasError(true);
+        });
+    }, []);
+
+    let content = <ul>{mealsList}</ul>;
+
+    if (hasError) {
+        content = <p>Something went wrong.</p>;
+    }
+
+    if (isLoading) {
+        content = <p>Fetcing available meals...</p>;
+    }
+
     return (
         <section className={classes.meals}>
-            <ul>{mealsList}</ul>
+            <Card>{content}</Card>
         </section>
     );
 };
